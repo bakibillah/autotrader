@@ -129,8 +129,10 @@ class AutotraderSpider(Spider):
                     trs = response.xpath(f'//td[contains(text(), "{key}")]/..')
                     dict_in[key] = len(trs[0].xpath('./td[2]//*[contains(@class, "-full svgIcon")]/@class').extract())
 
+        print(dl['a']['attr'])
         for key in ['year', 'make', 'model']:
-            product_details[key]: dl['a']['attr'].get(key)
+            product_details[key] = dl['a']['attr'].get(key)
+        
 
         product_details['price'] = [{'date': dtm_now.date(), 'value': dl['a']['attr'].get('price')}]
 
