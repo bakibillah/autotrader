@@ -57,7 +57,6 @@ class AutotraderSpider(Spider):
         for di in response.xpath('//script[contains(text(), "dataLayer.push(")]/text()').re(r'dataLayer\.push\((.+?)\);'):
             dl.update(json.loads(di))
 
-
         schema = json.loads(response.xpath('//script[@type="application/ld+json"]/text()').extract_first())
         dtm_now = datetime.now()
         item = OrderedDict()
