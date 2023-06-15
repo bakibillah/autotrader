@@ -32,16 +32,17 @@ class AutotraderSpider(Spider):
     def parse_dealer(self, response):
         car_data = response.json().get('data')
         for data in car_data:
-            if data['_source']['id'] not in self.existing:
+            if data['_source']['id'] not in [x['listingId'] for x in self.existing]:
                 url = data['_source'].get('url')
                 yield Request(f'https://www.{self.allowed_domains[0]}/{url}', callback=self.parse_car)
             else:
                 dtm_now = datetime.now()
-                item = OrderedDict()
-                item['productDetails']['price'].append({'date': dtm_now.date(), 'value': data['_source'].get('price')})
+                item = [e for e in self.existing if e['listingId'] == data['_source']['id']][0]
+                item['productDetails']['price'].append({'date': dtm_now.date(), 'value': data['_source']['price'].get('advertised_price')})
                 item['lastUpdated'] = dtm_now
                 yield item
 
+        # going to the next page
         if car_data:
             page = response.meta.get('page', 1) + 1
             dealer_id = response.meta.get('dealer_id')
@@ -153,4 +154,3 @@ class AutotraderSpider(Spider):
         item['general'] = general
 
         return item
-

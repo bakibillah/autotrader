@@ -8,6 +8,7 @@
 from itemadapter import ItemAdapter
 from datetime import datetime, timedelta
 import json
+import os
 
 
 class AutotraderScraperMongoPipeline:
@@ -29,17 +30,27 @@ class AutotraderScraperMongoPipeline:
 
 class AutotraderScraperFilePipeline:
 
+    @classmethod
+    def from_crawler(cls, crawler):
+        settings = crawler.settings
+        path = settings.get("OUT_FILE_PATH")
+        return cls(path)
+
+    def __init__(self, path):
+        self.path = path
+
     def open_spider(self, spider):
         target_date = datetime.now() - timedelta(days = 3)
-        spider.existing = []
+
+        spider.cars = []
 
         # JSON file read
         try:
-            with open('autotrader.json', 'r') as autotrader_file:
-                spider.cars = [car for car in json.load(autotrader_file) if car['lastUpdated'] < str(target_date.date())]
-                print(spider.cars)
+            with open(os.path.join(self.path, 'autotrader.json'), 'r') as autotrader_file:
+                spider.existing = [car for car in json.load(autotrader_file) if (car['lastUpdated'] > str(target_date.date()))]
+
         except FileNotFoundError:
-            spider.cars = []
+            spider.existing = []
 
     def process_item(self, item, spider):
         # Append to JSON file
@@ -51,5 +62,5 @@ class AutotraderScraperFilePipeline:
 
     def close_spider(self, spider):
         # JSON file save
-        with open('autotrader.json', 'w') as autotrader_file:
+        with open(os.path.join(self.path, 'autotrader.json'), 'w') as autotrader_file:
             json.dump(spider.cars, autotrader_file)
