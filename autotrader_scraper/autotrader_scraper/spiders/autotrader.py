@@ -3,6 +3,7 @@ import re
 import json
 from collections import OrderedDict
 from datetime import datetime
+import re
 
 
 class AutotraderSpider(Spider):
@@ -38,7 +39,10 @@ class AutotraderSpider(Spider):
             else:
                 dtm_now = datetime.now()
                 item = [e for e in self.existing if e['listingId'] == data['_source']['id']][0]
-                item['productDetails']['price'].append({'date': dtm_now.date(), 'value': data['_source']['price'].get('advertised_price')})
+                new_price = data['_source']['price'].get('advertised_price')
+                prev_price = item['productDetails']['price'][-1]['value']
+                if new_price != prev_price:
+                    item['productDetails']['price'].append({'date': dtm_now.date(), 'value': new_price})
                 item['lastUpdated'] = dtm_now
                 yield item
 
@@ -66,8 +70,7 @@ class AutotraderSpider(Spider):
         seller_location = {'Address': None, 'Dealer': None}
         product_details = {'Condition': None, 'Fuel type': None, 'Seller type': None}
         specs = {'Transmission': None, 'Body type': None, 'Drive type': None, 'Fuel type': None,
-                 'Fuel consumption': None, 'Exterior color': None,
-                          'Interior color': None, 'Registration': None, 'Rego expiry': None,
+                 'Fuel consumption': None, 'Colour ext / int': None, 'Registration': None, 'Rego expiry': None,
                            'VIN': None, 'Stock No': None}
         comfort = {'Seating capacity': None}
         exterior_body_features = {'Doors': None, 'Front tyre size': None, 'Front rim size': None,
@@ -128,6 +131,10 @@ class AutotraderSpider(Spider):
                 else:
                     trs = response.xpath(f'//td[contains(text(), "{key}")]/..')
                     dict_in[key] = len(trs[0].xpath('./td[2]//*[contains(@class, "-full svgIcon")]/@class').extract())
+
+        print( specs.get('Colour ext / int', '/')) 
+        specs['Exterior Color'], specs['Interior Color'] = tuple(x.strip() if x.strip() not in ('', '-') else None for x in re.split(r'\s/\s', specs.get('Colour ext / int', '/')))
+        del specs['Colour ext / int']
 
         for key in ['year', 'make', 'model']:
             product_details[key] = dl['a']['attr'].get(key)
