@@ -9,6 +9,7 @@ from itemadapter import ItemAdapter
 from datetime import datetime, timedelta
 import json
 import os
+import logging
 
 
 class AutotraderScraperMongoPipeline:
@@ -41,13 +42,14 @@ class AutotraderScraperFilePipeline:
 
     def open_spider(self, spider):
         target_date = datetime.now() - timedelta(days = 3)
-
         spider.cars = []
+        spider.processed = []
 
         # JSON file read
         try:
             with open(os.path.join(self.path, 'autotrader.json'), 'r') as autotrader_file:
                 spider.existing = [car for car in json.load(autotrader_file) if (car['lastUpdated'] > str(target_date.date()))]
+                logging.debug(f'{len(spider.existing)} cars exist in the file')
 
         except FileNotFoundError:
             spider.existing = []
@@ -63,4 +65,4 @@ class AutotraderScraperFilePipeline:
     def close_spider(self, spider):
         # JSON file save
         with open(os.path.join(self.path, 'autotrader.json'), 'w') as autotrader_file:
-            json.dump(spider.cars, autotrader_file)
+            json.dump(spider.cars, autotrader_file, indent=4)
