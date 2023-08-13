@@ -36,28 +36,22 @@ class AutotraderSpider(Spider):
     def parse_dealer(self, response):
         car_data = response.json().get('data')
         for data in car_data:
-            
             car_listing_id = data['_source']['id']
 
-            if car_listing_id not in self.processed:
+            if car_listing_id not in [x['listingId'] for x in self.existing]:
+                url = data['_source'].get('url')
+                yield Request(f'https://www.{self.allowed_domains[0]}/{url}', callback=self.parse_car)
 
-                if car_listing_id not in [x['listingId'] for x in self.existing]:
-                    url = data['_source'].get('url')
-                    yield Request(f'https://www.{self.allowed_domains[0]}/{url}', callback=self.parse_car)
+            else:
+                dtm_now = datetime.now()
+                item = list(filter(lambda item: item.get('listingId') == car_listing_id, self.existing))[0]
+                new_price = data['_source']['price'].get('advertised_price')
+                prev_price = item['productDetails']['price'][-1]['value']
+                if new_price != prev_price:
+                    item['productDetails']['price'].append({'date': dtm_now.date(), 'value': new_price})
+                item['lastUpdated'] = dtm_now
+                yield item
 
-                else:
-                    dtm_now = datetime.now()
-                    item = list(filter(lambda item: item.get('listingId') == car_listing_id, self.existing))[0]
-                    new_price = data['_source']['price'].get('advertised_price')
-                    prev_price = item['productDetails']['price'][-1]['value']
-                    if new_price != prev_price:
-                        item['productDetails']['price'].append({'date': dtm_now.date(), 'value': new_price})
-                    item['lastUpdated'] = dtm_now
-                    yield item
-
-                self.existing = list(filter(lambda item: item.get('listingId') != car_listing_id, self.existing))
-
-            self.processed.append(car_listing_id)
 
         # go to the next page
         if car_data:
@@ -69,14 +63,7 @@ class AutotraderSpider(Spider):
             req_dealer_page.meta['last'] = response.meta['last']
             yield req_dealer_page
 
-        # if last page, check remaining existing cars
-        elif response.meta['last']:
-            for remaining in self.existing:
-                if remaining.get('listing_id') not in self.processed:
-                    if not remaining.get('isSold'):
-                        yield Request(remaining["url"], callback=self.parse_car)
-                    else:
-                        yield remaining
+
 
 
     def parse_car(self, response):

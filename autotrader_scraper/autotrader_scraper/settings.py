@@ -12,7 +12,7 @@ BOT_NAME = 'autotrader_scraper'
 SPIDER_MODULES = ['autotrader_scraper.spiders']
 NEWSPIDER_MODULE = 'autotrader_scraper.spiders'
 
-
+LOG_LEVEL = 'INFO'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'autotrader_scraper (+http://www.yourdomain.com)'
 
