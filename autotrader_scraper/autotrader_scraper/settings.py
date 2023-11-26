@@ -87,4 +87,4 @@ ITEM_PIPELINES = {
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-OUT_FILE_PATH = './files'
+OUT_FILE_PATH = '/home/baki/PycharmProjects/autotrader_scraping/autotrader_scraper/files'
