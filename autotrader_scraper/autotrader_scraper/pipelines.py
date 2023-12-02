@@ -72,12 +72,7 @@ class AutotraderScraperFilePipeline:
 
     def close_spider(self, spider):
         print('close')
-        proxies = {
-            'http': '127.0.0.1:8080',
-            'https': '127.0.0.1:8080',
-        }
         session = requests.session()
-
         result = [item for item in spider.existing if item not in spider.old_unsold]
         count = 0
         for data in result:

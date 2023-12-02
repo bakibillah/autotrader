@@ -29,11 +29,6 @@ class AutotraderSpider(Spider):
             req_dealer.meta['dealer_id'] = dealer_id
             req_dealer.meta['last'] = True if (n == len(dealer_list) - 1) else False
             yield req_dealer
-        print(f'here we can call existing url: {self.old_unsold}')
-        # for item in self.existing:
-        #     url = item['url']
-        #     print(url)
-        #     yield Request(url, callback=self.parse_car2)
 
     def parse_dealer(self, response):
         car_data = response.json().get('data')
@@ -45,24 +40,11 @@ class AutotraderSpider(Spider):
 
             if car_listing_id not in x_list:
                 url = data['_source'].get('url')
-                print(url)
                 yield Request(f'https://www.{self.allowed_domains[0]}/{url}', callback=self.parse_car)
             else:
-                print(len(self.old_unsold))
-
                 for item in self.existing:
                     if item['listingId'] == car_listing_id:
                         self.old_unsold.append(item)
-            #     dtm_now = datetime.now()
-            #     item = list(filter(lambda item: item.get('listingId') == car_listing_id, self.existing))[0]
-            #     new_price = data['_source']['price'].get('advertised_price')
-            #     prev_price = int(item['price'])
-            #     # prev_price = item['productDetails']['price'][-1]['value']
-            #     if new_price != prev_price:
-            #         item['productDetails']['price'].append({'date': dtm_now.date(), 'value': new_price})
-            #         item['price'].append({'date': dtm_now.date(), 'value': new_price})
-            #     item['lastUpdated'] = dtm_now
-            #     yield item
 
         # go to the next page
         if car_data:
@@ -174,7 +156,22 @@ class AutotraderSpider(Spider):
 
             vehicle_details_element = response.xpath('//div[contains(@class, "vehicleDetails--details")]').get()
             vehicle_details_text = scrapy.Selector(text=vehicle_details_element).css('.vehicleDetails--detail::text')
-            product_details['kilometers'] = vehicle_details_text[0].get()
+            # print(vehicle_details_text[0].get())
+            try:
+                kilometers = vehicle_details_text[0].get()
+                if 'km' in kilometers:
+                    kilometers_ = kilometers.replace(' km', '')
+                    if ',' in kilometers:
+                        kilometers_str = kilometers_.replace(',', '')
+                        kilometers = int(kilometers_str)
+                    else:
+                        kilometers = int(kilometers_)
+                else:
+                    kilometers = 0
+                print(kilometers)
+                product_details['kilometers'] = kilometers
+            except Exception as e:
+                print(e)
             product_details['Vehicle Type'] = vehicle_details_text[1].get()
             # seller_location_ = vehicle_details_text[5].get()
             # product_details['suburb'] = seller_location_.split(',')[-2].strip()
